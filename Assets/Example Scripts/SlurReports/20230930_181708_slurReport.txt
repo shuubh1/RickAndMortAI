@@ -1,0 +1,21 @@
+Slur found: nico	Phonicated: NAKA   	Context:  technicolor a
+Slur found: nico	Phonicated: NAKA   	Context:  Technicolor a
+Slur found: n Ga	Phonicated: NKA   	Context: aks in Gar kne
+Slur found: nee ge	Phonicated: NAKA   	Context: Gar knee genius 
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne
+Slur found: nee? Ga	Phonicated: NAKA   	Context: Gar knee? Gar kNO
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne
+Slur found: n! Ga	Phonicated: NKA   	Context: ee fun! Gar kNO
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne
+Slur found: nee! Ga	Phonicated: NAKA   	Context: Gar knee! Gar kNO
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne
+Slur found: nee Ga	Phonicated: NAKA   	Context: Gar knee Gar kne

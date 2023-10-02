@@ -1,0 +1,21 @@
+Slur found: n charac	Phonicated: NKARAK   	Context: artoon character?
+Slur found: Now, ge	Phonicated: NAKA   	Context: nse. Now, get out
+Slur found: n ca	Phonicated: NKA   	Context: hidden cave in
+Slur found: n ca	Phonicated: NKA   	Context: hidden cave? T
+Slur found: n Ca	Phonicated: NKA   	Context: Hidden Cave]
+Slur found: n ca	Phonicated: NKA   	Context: hidden cave? W
+Slur found: n co	Phonicated: NKA   	Context: spoken correct
+Slur found: nee... Ga	Phonicated: NAKA   	Context: Gar knee... Gar kne
+Slur found: nee! Ga	Phonicated: NAKA   	Context: Gar knee! Gar kne
+Slur found: nee! Ga	Phonicated: NAKA   	Context: Gar knee! Gar kne
+Slur found: nee! Ga	Phonicated: NAKA   	Context: Gar knee! Gar kne
+Slur found: nee. Ga	Phonicated: NAKA   	Context: Gar knee. Gar kne
+Slur found: ne. Ga	Phonicated: NAKA   	Context: e, fine. Gar kNO
+Slur found: nee! Ga	Phonicated: NAKA   	Context: Gar knee! Gar kne
+Slur found: nee! Ga	Phonicated: NAKA   	Context: Gar knee! Gar kne
+Slur found: nee ca	Phonicated: NAKA   	Context: Gar knee can't s
+Slur found: nee... Ga	Phonicated: NAKA   	Context: Gar knee... Gar kne
+Slur found: nee! Ga	Phonicated: NAKA   	Context: Gar knee! Gar kne
+Slur found: nee! Ga	Phonicated: NAKA   	Context: Gar knee! Gar kne
+Slur found: nee! Ga	Phonicated: NAKA   	Context: Gar knee! Gar kne
+Slur found: nee! Ga	Phonicated: NAKA   	Context: Gar knee! Gar kne
