@@ -9,6 +9,8 @@ using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Linq;
+using System.Text;
 
 
 // this is the big daddy script that controls everything
@@ -19,9 +21,11 @@ public class WholeThingManager : MonoBehaviour
     public OpenAISlurDetector slurDetectorChatGPT;
     public SlurDetectorEvan slurDetectorPhonic;
     public AIController AIController;
+    public OpenAICameraDirector openAICameraDirector;
     public SceneDirector sceneDirector;
     public FakeYouAPIManager fakeYouAPIManager;
     public YouTubeChatFromSteven youTubeChat;
+    public ReplicateAPI replicateAPI;
 
     public bool usingVoiceActing = true;
 
@@ -54,9 +58,23 @@ public class WholeThingManager : MonoBehaviour
     public string firstPrompt = "Banana";
     public bool runMainLoop = true;
 
+    public bool usingChatGptCameraShots = true;
 
     public bool useChatgptSlurDetection = false;
     public bool usePhonicSlurDetection = true;
+    public bool useAiArt = true;
+
+    public CharacterInfo defaultGuy;
+    public AiArtDimensionController aiArtDimension;
+    public AiArtCharacterController aiArtCharacter;
+
+    public bool useDefaultScript = false;
+    public TextAsset defaultScript;
+
+
+    public bool waitForVoting = true;
+
+    public bool justDoOneScene = false;
 
 
     void Start()
@@ -67,6 +85,7 @@ public class WholeThingManager : MonoBehaviour
         enableOrDisableVotingUI(false);
 
         AIController.Init();
+        openAICameraDirector.Init();
         if (runMainLoop)
         {
             MainLoop();
@@ -124,7 +143,7 @@ public class WholeThingManager : MonoBehaviour
     {
 
         // chill for a bit to give time to setup everything
-        await Task.Delay(10000);
+        await Task.Delay(2000);
 
         RickAndMortyScene currentScene = null;
 
@@ -163,7 +182,7 @@ public class WholeThingManager : MonoBehaviour
 
             if (randomTopics == null)
             {
-                randomTopics = new List<string> {"morty keeps repeating Gar knee\nme",
+                randomTopics = new List<string> {"morty talks with yoda\nme",
                 "Rick and morty fight batman\nme",
                   "Rick and morty go to Australia\nme" };
             }
@@ -201,7 +220,7 @@ public class WholeThingManager : MonoBehaviour
 
             // since we are generating a scene in the background while we play a scene, the generating scene needs to finish generating before we finish voting
             // and we also wait a minimum of 30 seconds
-            while (stillGeneratingScene || voteTime < 30f)
+            while (stillGeneratingScene || (voteTime < 30f && waitForVoting))
             {
                 //get the votes
                 voteNumbers = youTubeChat.CountVotes();
@@ -288,6 +307,9 @@ public class WholeThingManager : MonoBehaviour
 
             // both of these are async functions, so they will run in the backgound, this means we are running a scene and generating a scene at the same time. 
             RunScene(currentScene);
+
+            if (justDoOneScene) { return; }
+
             CreateScene(randomTopics[chosenTopic], randomTopicAuthors[chosenTopic], randomTopics[backupTopic], randomTopicAuthors[backupTopic], usingVoiceActing);
             firstRunThrough = false;
         }
@@ -301,6 +323,8 @@ public class WholeThingManager : MonoBehaviour
 
         // display title
 
+        aiArtDimension.UpdateTextureForNextScene();
+        aiArtCharacter.UpdateTextureForNextScene();
         //run the scene
         await sceneDirector.PlayScene(scene.chatGPTOutputLines, scene.ttsVoiceActingLines);
 
@@ -331,9 +355,20 @@ public class WholeThingManager : MonoBehaviour
             //prompt += ". Make sure to use light profanity like frick, shoot and crap. Scripts should have at least 30 lines of dialog.";
             // prompt += ". Rick and Morty are currently in " + sceneDirector.currentDimension.name + ". Make sure to use light profanity like frick, shoot and crap. Scripts should have at least 30 lines of dialog.";
 
+            if (!useDefaultScript)
+            {
+                // chuck the prompt into chatgpt
 
-            // chuck the prompt into chatgpt
-            chatGPTOutput = await AIController.EnterPromptAndGetResponse(prompt);
+                chatGPTOutput = await AIController.EnterPromptAndGetResponse(prompt);
+            }
+            else
+            {
+
+                chatGPTOutput = defaultScript.text;
+                await Task.Delay(1000);
+            }
+
+
 
             // add the title and author to the scene so the narrator speaks them
             chatGPTOutput = "Narrator: " + initialPrompt + "\n" +
@@ -351,32 +386,34 @@ public class WholeThingManager : MonoBehaviour
             string str = AIController.OutputString;
             chatGPTOutputLines = Utils.ProcessOutputIntoStringArray(chatGPTOutput, ref str);
             AIController.OutputString = str;
-
-            // save a text file
-            try
+            if (!useDefaultScript)
             {
-                // Get the current date and time
-                string dateTimeString = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-                // Create the full path for the file
-                string path = $"{Environment.CurrentDirectory}\\Assets\\Example Scripts\\OutputScripts\\{dateTimeString}_{initialPrompt}.txt";
-
-                // Create an empty file and close it immediately
-                using (FileStream fs = File.Create(path))
+                // save a text file
+                try
                 {
-                    // Close the file immediately to allow subsequent write operations
+                    // Get the current date and time
+                    string dateTimeString = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+                    // Create the full path for the file
+                    string path = $"{Environment.CurrentDirectory}\\Assets\\Example Scripts\\OutputScripts\\{dateTimeString}_{initialPrompt}.txt";
+
+                    // Create an empty file and close it immediately
+                    using (FileStream fs = File.Create(path))
+                    {
+                        // Close the file immediately to allow subsequent write operations
+                    }
+
+                    // Write the string to the file
+                    File.WriteAllText(path, chatGPTOutput);
+
+                    // Log success
+                    Debug.Log("Data saved successfully to: " + path);
                 }
-
-                // Write the string to the file
-                File.WriteAllText(path, chatGPTOutput);
-
-                // Log success
-                Debug.Log("Data saved successfully to: " + path);
-            }
-            catch (System.Exception e)
-            {
-                // Log any exceptions that occur
-                Debug.LogError("An error occurred while saving data: " + e.Message);
+                catch (System.Exception e)
+                {
+                    // Log any exceptions that occur
+                    Debug.LogError("An error occurred while saving data: " + e.Message);
+                }
             }
 
 
@@ -394,6 +431,26 @@ public class WholeThingManager : MonoBehaviour
             }
             else
             {
+                // // add camera angles
+                // if (usingChatGptCameraShots)
+                // {
+                //     textField.text = creatingScene + " --- " + "Adding Camera Angles";
+
+                //     chatGPTOutput = await openAICameraDirector.EnterPromptAndGetResponse(chatGPTOutput);
+                //     openAICameraDirector.Clear();
+
+
+                //     // chatGPTOutput = "Narrator: " + initialPrompt + "\n" + "Narrator: Prompt By: " + promptAuthor + "\n" + chatGPTOutput;
+
+                //     string str2 = AIController.OutputString;
+                //     chatGPTOutputLines = Utils.ProcessOutputIntoStringArray(chatGPTOutput, ref str2);
+                //     AIController.OutputString = str2;
+
+                // }
+
+
+
+
                 textField.text = creatingScene + " --- " + "Detecting Slurs...";
 
 
@@ -451,16 +508,13 @@ public class WholeThingManager : MonoBehaviour
 
 
                 }
-                Debug.Log("ah");
+
                 if (usePhonicSlurDetection)
                 {
-                    Debug.Log("get detecting boy");
                     for (int i = 0; i < chatGPTOutputLines.Length; i++)
                     {
-                        Debug.Log(i);
                         chatGPTOutputLines[i] = slurDetectorPhonic.RemoveSlurs(chatGPTOutputLines[i]);
                     }
-                    Debug.Log("yay");
 
                 }
 
@@ -493,24 +547,204 @@ public class WholeThingManager : MonoBehaviour
             Debug.LogError("An error occurred while saving data: " + e.Message);
         }
         textField.text = creatingScene + " --- " + "Detecting Dialog...";
+
+
+        string nameOfAiGeneratedCharacter = null;
+        string nameOfAiGeneratedDimension = null;
         // extract the dialog info from the output lines this includes the voiceModelUUIDs, the character names, and the text that they speak.	
-        List<string>[] dialogInfo = sceneDirector.ProcessDialogFromLines(ref chatGPTOutputLines);
+        List<string>[] dialogInfo = sceneDirector.ProcessDialogFromLines(ref chatGPTOutputLines, ref nameOfAiGeneratedCharacter, ref nameOfAiGeneratedDimension);
         List<string> voiceModelUUIDs = dialogInfo[0];
         List<string> characterNames = dialogInfo[1];
         List<string> textsToSpeak = dialogInfo[2];
+
+        Debug.Log(nameOfAiGeneratedCharacter);
+        Debug.Log(nameOfAiGeneratedDimension);
+
+        List<Task> allConcurrentTasks = new List<Task>();
+
+
+        // Start both tasks in parallel
+        // var aiArtTask = replicateAPI.GenerateAndSetTexturesForCharacter(defaultGuy, nameOfAiGeneratedCharacter);
+        Task aiArtTask = null;
+        if (useAiArt && (nameOfAiGeneratedCharacter != null || nameOfAiGeneratedDimension != null))
+        {
+            aiArtTask = replicateAPI.DoAllTheAiArtStuffForAScene(aiArtCharacter, nameOfAiGeneratedCharacter, aiArtDimension, nameOfAiGeneratedDimension);
+            allConcurrentTasks.Add(aiArtTask);
+        }
+
         textField.text = creatingScene + " --- " + "Generating FakeYou TTS...";
-        // generate text to speech voice acting based on dialog	
+
+        Task<List<AudioClip>> ttsVoiceActingTask = null;
+        if (isThisSceneUsingVoiceActing)
+        {
+            ttsVoiceActingTask = fakeYouAPIManager.GenerateTTS(textsToSpeak, voiceModelUUIDs, characterNames, textField, creatingScene);
+            allConcurrentTasks.Add(ttsVoiceActingTask);
+
+        }
+
+        Task<string> CameraShotsChatGPTTask = null;
+        if (usingChatGptCameraShots)
+        {
+            string outputLinesReMerged = string.Join("\n", chatGPTOutputLines);
+            CameraShotsChatGPTTask = openAICameraDirector.EnterPromptAndGetResponse(outputLinesReMerged);
+            // string cameraChatGPTOutput = await openAICameraDirector.EnterPromptAndGetResponse(outputLinesReMerged);
+            // // string cameraChatGPTOutput = CameraShotsChatGPTTask.Result;
+            // char[] delims = new[] { '\r', '\n' };
+            // string[] outputLinesProcessedWithCameraShots = cameraChatGPTOutput.Split(delims, StringSplitOptions.RemoveEmptyEntries);
+            // chatGPTOutputLines = outputLinesProcessedWithCameraShots;
+            allConcurrentTasks.Add(CameraShotsChatGPTTask);
+
+        }
+
+
+
+
+        Debug.Log("start await");
+        if (allConcurrentTasks.Count > 0)
+        {
+            await Task.WhenAll(allConcurrentTasks);
+        }
+
+
+        // if (aiArtTask != null && ttsVoiceActingTask != null)
+        // {
+        //     await Task.WhenAll(aiArtTask, ttsVoiceActingTask);
+        // }
+        // else if (aiArtTask != null)
+        // {
+        //     await Task.WhenAll(aiArtTask);
+        // }
+        // else if (ttsVoiceActingTask != null)
+        // {
+        //     await Task.WhenAll(ttsVoiceActingTask);
+        // }
+
+        Debug.Log("finish await");
+        //retrieve the result of ttsVoiceActingTask after awaiting it
+
+        if (usingChatGptCameraShots)
+        {
+
+            string cameraChatGPTOutput = CameraShotsChatGPTTask.Result;
+            char[] delims = new[] { '\r', '\n' };
+            string[] outputLinesProcessedWithCameraShots = cameraChatGPTOutput.Split(delims, StringSplitOptions.RemoveEmptyEntries);
+
+            // ok so now we have 2 scripts 1 with camera angles and 1 without, sometimes the one without removes lines and shit, so we cant
+            // just use that we have to merge them
+
+
+
+
+            List<string> combinedList = chatGPTOutputLines.ToList();
+
+            int checkedIndexOnCombinedList = 0;
+            //length -1 because we dont care if a camera instruciton is at the end of the list
+            for (int i = 0; i < outputLinesProcessedWithCameraShots.Length - 1; i++)
+            {
+                string lineWeChecking = outputLinesProcessedWithCameraShots[i];
+                //if this bitch is a camera command
+                if (lineWeChecking.Contains("{") && !lineWeChecking.Contains(":"))
+                {
+
+
+                    // then we get the instuction after this one and find it in the original array.
+                    string nextInstruction = outputLinesProcessedWithCameraShots[i + 1];
+
+                    // dont start at 0 so if 2 lines are the same we dont insert it again
+                    for (int j = checkedIndexOnCombinedList; j < combinedList.Count; j++)
+                    {
+                        // Clean strings by removing special characters, spaces, and converting to lowercase
+
+                        string cleanedString1 = Regex.Replace(combinedList[j], "[^a-zA-Z0-9]", "").ToLower();
+                        string cleanedString2 = Regex.Replace(nextInstruction, "[^a-zA-Z0-9]", "").ToLower();
+                        //match found
+                        if (cleanedString1 == cleanedString2)
+                        {
+                            // add the instruction in before j
+                            combinedList.Insert(j, lineWeChecking);
+
+                            // move the checked index forward so we dont add another line before this.
+                            // its +2 becauses we inserted an item which increases the index by 1 and then we want to move the pointer to the next instuction
+                            checkedIndexOnCombinedList = j + 2;
+                            break;
+                        }
+                    }
+                }
+
+            }
+
+
+            // ok now check for entering portals, only 2 shots actually look good so change it to either wide shot, or tracking shot behind.
+            for (int i = 1; i < combinedList.Count; i++)
+            {
+                string lineWeChecking = combinedList[i];
+                if (lineWeChecking.Contains("[") && lineWeChecking.ToLower().Contains("portal to"))
+                {
+                    string previousLine = combinedList[i - 1];
+                    if (!previousLine.Contains("{"))
+                    {
+                        combinedList.Insert(i, "{Wide Shot}");
+                        i += 1;
+                        continue;
+                    }
+                    else if (!previousLine.ToLower().Contains("wide shot"))
+                    {
+                        //if the previous shot isnt a wide shot then add a tracking shot behind.
+                        combinedList[i-1] = "{Tracking shot, Morty, behind}";
+                        continue;
+                    }
+                }
+            }
+
+
+
+
+            string outputLinesReMerged = string.Join("\n", chatGPTOutputLines);
+
+            Debug.Log("original: \n " + string.Join("\n", chatGPTOutputLines));
+            Debug.Log("Chatgpt camer angles: \n " + string.Join("\n", outputLinesProcessedWithCameraShots));
+            Debug.Log("Combined: \n " + string.Join("\n", combinedList.ToArray()));
+
+
+
+            chatGPTOutputLines = combinedList.ToArray();
+
+            // chatGPTOutputLines = outputLinesProcessedWithCameraShots;
+        }
+
+
         List<AudioClip> ttsVoiceActingOrdered = null;
         if (isThisSceneUsingVoiceActing)
         {
-            ttsVoiceActingOrdered = await fakeYouAPIManager.GenerateTTS(textsToSpeak, voiceModelUUIDs, characterNames, textField, creatingScene);
+            ttsVoiceActingOrdered = ttsVoiceActingTask.Result;
         }
+
+        //-------------------------------------------------
+
+        // await replicateAPI.GenerateAndSetTexturesForCharacter(defaultGuy, nameOfAiGeneratedCharacter);
+
+
+
+        // textField.text = creatingScene + " --- " + "Generating FakeYou TTS...";
+        // // generate text to speech voice acting based on dialog	
+        // List<AudioClip> ttsVoiceActingOrdered = null;
+        // if (isThisSceneUsingVoiceActing)
+        // {
+        //     ttsVoiceActingOrdered = await fakeYouAPIManager.GenerateTTS(textsToSpeak, voiceModelUUIDs, characterNames, textField, creatingScene);
+        // }
         textField.text = creatingScene + " --- " + "Done :)";
         // we done	
         stillGeneratingScene = false;
         nextScene = new RickAndMortyScene(initialPrompt, promptAuthor, chatGPTOutputLines, ttsVoiceActingOrdered);
     }
+    bool AreStringsEqual(string s1, string s2)
+    {
+        // Clean strings by removing special characters, spaces, and converting to lowercase
+        s1 = Regex.Replace(s1, "[^a-zA-Z0-9]", "").ToLower();
+        s2 = Regex.Replace(s2, "[^a-zA-Z0-9]", "").ToLower();
 
+        return s1 == s2;
+    }
 
     // this shit is so the vote text changes smoothly over time
     private int initialTopic1Votes = 0;
